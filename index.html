@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maze Solver Visualization</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .cell {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #ccc;
+            display: inline-block;
+            margin: 1px;
+            transition: background-color 0.3s ease;
+            touch-action: manipulation;
+        }
+
+        .start {
+            background-color: #4CAF50;
+        }
+
+        .end {
+            background-color: #F44336;
+        }
+
+        .wall {
+            background-color: #333;
+        }
+
+        .visited {
+            background-color: #2196F3;
+            animation: visitedAnimation 0.5s ease-out;
+        }
+
+        .path {
+            background-color: #FFEB3B;
+            animation: pathAnimation 1s ease-out;
+        }
+
+        .current {
+            background-color: #9C27B0;
+        }
+
+        @keyframes visitedAnimation {
+            0% {
+                transform: scale(0.5);
+                background-color: #64B5F6;
+            }
+            50% {
+                transform: scale(1.2);
+                background-color: #2196F3;
+            }
+            100% {
+                transform: scale(1);
+                background-color: #2196F3;
+            }
+        }
+
+        @keyframes pathAnimation {
+            0% {
+                transform: scale(0.5);
+                background-color: #FFF176;
+            }
+            50% {
+                transform: scale(1.2);
+                background-color: #FFEB3B;
+            }
+            100% {
+                transform: scale(1);
+                background-color: #FFEB3B;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .cell {
+                width: 20px;
+                height: 20px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">Maze Solver Visualization</h1>
+            <p class="text-gray-600">Visualizing BFS and DFS pathfinding algorithms</p>
+        </header>
+
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <div class="flex flex-col md:flex-row gap-8">
+                <div class="flex-1">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center space-x-4">
+                            <label for="grid-size" class="font-medium text-gray-700">Grid Size:</label>
+                            <select id="grid-size" class="border rounded px-3 py-1">
+                                <option value="10">10x10</option>
+                                <option value="15">15x15</option>
+                                <option value="20">20x20</option>
+                                <option value="25">25x25</option>
+                            </select>
+                        </div>
+                        <button id="generate-maze" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded">
+                            Generate Maze
+                        </button>
+                    </div>
+
+                    <div class="grid-container mb-4 overflow-auto">
+                        <!-- Grid will be generated here -->
+                    </div>
+
+                    <div class="flex space-x-4">
+                        <button id="add-start" class="bg-green-500 hover:bg-green-600 text-white px-4 py-1 rounded">
+                            Set Start
+                        </button>
+                        <button id="add-end" class="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded">
+                            Set End
+                        </button>
+                        <button id="add-wall" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-1 rounded">
+                            Add Wall
+                        </button>
+                        <button id="clear-walls" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded">
+                            Clear Walls
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex-1 md:w-96">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center space-x-4">
+                            <label for="algorithm" class="font-medium text-gray-700">Algorithm:</label>
+                            <select id="algorithm" class="border rounded px-3 py-1">
+                                <option value="bfs">Breadth-First Search (BFS)</option>
+                                <option value="dfs">Depth-First Search (DFS)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col space-y-4 mb-6">
+                        <div>
+                            <label for="speed" class="block font-medium text-gray-700 mb-1">Speed</label>
+                            <input type="range" id="speed" min="1" max="10" value="5" class="w-full">
+                            <div class="flex justify-between text-sm text-gray-600">
+                                <span>Slow</span>
+                                <span>Fast</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50 p-3 rounded">
+                            <div class="grid grid-cols-2 gap-2 mb-2">
+                                <div class="flex items-center">
+                                    <div class="w-4 h-4 bg-green-500 mr-2"></div>
+                                    <span>Start</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-4 h-4 bg-red-500 mr-2"></div>
+                                    <span>End</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-4 h-4 bg-gray-700 mr-2"></div>
+                                    <span>Wall</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-4 h-4 bg-blue-500 mr-2"></div>
+                                    <span>Visited</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-4 h-4 bg-purple-500 mr-2"></div>
+                                    <span>Current</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-4 h-4 bg-yellow-400 mr-2"></div>
+                                    <span>Path</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between space-x-2 mb-4">
+                        <button id="start" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded flex-1">
+                            Start
+                        </button>
+                        <button id="pause" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded flex-1" disabled>
+                            Pause
+                        </button>
+                        <button id="reset" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded flex-1">
+                            Reset
+                        </button>
+                    </div>
+
+                    <div class="bg-gray-50 p-4 rounded">
+                        <h3 class="font-medium text-gray-700 mb-2">Statistics</h3>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>Steps:</div>
+                            <div id="steps">0</div>
+                            <div>Visited Cells:</div>
+                            <div id="visited-count">0</div>
+                            <div>Path Length:</div>
+                            <div id="path-length">0</div>
+                            <div>Status:</div>
+                            <div id="status" class="text-green-600">Ready</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">How to Use</h2>
+            <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="font-medium text-gray-700 mb-2">Grid Controls</h3>
+                    <ul class="list-disc pl-5 text-gray-600 space-y-1">
+                        <li>Click <span class="font-medium">Set Start</span> then click on a cell to place the start position</li>
+                        <li>Click <span class="font-medium">Set End</span> then click on a cell to place the end position</li>
+                        <li>Click <span class="font-medium">Add Wall</span> then click and drag to draw walls</li>
+                        <li>Use <span class="font-medium">Generate Maze</span> to create random walls</li>
+                        <li>Use <span class="font-medium">Clear Walls</span> to remove all walls</li>
+                        <li>Change grid size from the dropdown</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-medium text-gray-700 mb-2">Algorithm Controls</h3>
+                    <ul class="list-disc pl-5 text-gray-600 space-y-1">
+                        <li>Select algorithm (BFS or DFS)</li>
+                        <li>Adjust speed with the slider</li>
+                        <li>Click <span class="font-medium">Start</span> to begin visualization</li>
+                        <li>Click <span class="font-medium">Pause</span> to pause visualization</li>
+                        <li>Click <span class="font-medium">Reset</span> to clear visualization</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Algorithm Information</h2>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-xl font-medium text-gray-700 mb-2">Breadth-First Search (BFS)</h3>
+                    <p class="text-gray-600 mb-3">
+                        BFS explores all neighbor nodes at the present depth prior to moving on to nodes at the next depth level. It uses a queue and finds the shortest path.
+                    </p>
+                    <div class="bg-gray-50 p-3 rounded">
+                        <h4 class="font-medium text-gray-700 mb-1">Characteristics:</h4>
+                        <ul class="list-disc pl-5 text-gray-600 space-y-1">
+                            <li>Guaranteed to find the shortest path</li>
+                            <li>Uses a queue (FIFO)</li>
+                            <li>Explores all possible directions equally</li>
+                            <li>Memory intensive for large grids</li>
+                        </ul>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-xl font-medium text-gray-700 mb-2">Depth-First Search (DFS)</h3>
+                    <p class="text-gray-600 mb-3">
+                        DFS explores as far as possible along each branch before backtracking. It uses a stack (or recursion) and may not find the shortest path.
+                    </p>
+                    <div class="bg-gray-50 p-3 rounded">
+                        <h4 class="font-medium text-gray-700 mb-1">Characteristics:</h4>
+                        <ul class="list-disc pl-5 text-gray-600 space-y-1">
+                            <li>Does not guarantee shortest path</li>
+                            <li>Uses a stack (LIFO) or recursion</li>
+                            <li>May be faster for certain maze configurations</li>
+                            <li>Uses less memory than BFS</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Constants
+            const EMPTY = 0;
+            const WALL = 1;
+            const START = 2;
+            const END = 3;
+            const VISITED = 4;
+            const PATH = 5;
+            const CURRENT = 6;
+
+            // State variables
+            let gridSize = 15;
+            let grid = [];
+            let visualizationRunning = false;
+            let visualizationPaused = false;
+            let timeoutIds = [];
+            let startPosition = null;
+            let endPosition = null;
+            let currentMode = 'wall'; // 'start', 'end', 'wall'
+            let visitedCount = 0;
+            let pathLength = 0;
+
+            // DOM elements
+            const gridContainer = document.querySelector('.grid-container');
+            const gridSizeSelect = document.getElementById('grid-size');
+            const generateMazeBtn = document.getElementById('generate-maze');
+            const addStartBtn = document.getElementById('add-start');
+            const addEndBtn = document.getElementById('add-end');
+            const addWallBtn = document.getElementById('add-wall');
+            const clearWallsBtn = document.getElementById('clear-walls');
+            const algorithmSelect = document.getElementById('algorithm');
+            const speedSlider = document.getElementById('speed');
+            const startBtn = document.getElementById('start');
+            const pauseBtn = document.getElementById('pause');
+            const resetBtn = document.getElementById('reset');
+            const stepsElement = document.getElementById('steps');
+            const visitedCountElement = document.getElementById('visited-count');
+            const pathLengthElement = document.getElementById('path-length');
+            const statusElement = document.getElementById('status');
+
+            // Initialize the grid
+            function initializeGrid(size) {
+                gridSize = size;
+                grid = Array(size).fill().map(() => Array(size).fill(EMPTY));
+                startPosition = null;
+                endPosition = null;
+                visitedCount = 0;
+                pathLength = 0;
+                updateStats();
+                
+                // Clear existing grid
+                gridContainer.innerHTML = '';
+                
+                // Create new grid
+                gridContainer.style.width = `${size * 32}px`;
+                
+                for (let i = 0; i < size; i++) {
+                    for (let j = 0; j < size; j++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.row = i;
+                        cell.dataset.col = j;
+                        
+                        cell.addEventListener('mousedown', handleCellClick);
+                        cell.addEventListener('mouseover', handleCellHover);
+                        cell.addEventListener('touchstart', handleCellTouch, { passive: false });
+                        
+                        gridContainer.appendChild(cell);
+                    }
+                }
+                
+                statusElement.textContent = 'Ready';
+                statusElement.className = 'text-green-600';
+            }
+
+            // Handle cell click
+            function handleCellClick(e) {
+                if (visualizationRunning && !visualizationPaused) return;
+                
+                const row = parseInt(e.target.dataset.row);
+                const col = parseInt(e.target.dataset.col);
+                
+                if (currentMode === 'start') {
+                    // Remove previous start
+                    if (startPosition) {
+                        const [prevRow, prevCol] = startPosition;
+                        grid[prevRow][prevCol] = EMPTY;
+                        updateCell(prevRow, prevCol);
+                    }
+                    
+                    // Set new start
+                    grid[row][col] = START;
+                    startPosition = [row, col];
+                    updateCell(row, col);
+                } else if (currentMode === 'end') {
+                    // Remove previous end
+                    if (endPosition) {
+                        const [prevRow, prevCol] = endPosition;
+                        grid[prevRow][prevCol] = EMPTY;
+                        updateCell(prevRow, prevCol);
+                    }
+                    
+                    // Set new end
+                    grid[row][col] = END;
+                    endPosition = [row, col];
+                    updateCell(row, col);
+                } else if (currentMode === 'wall') {
+                    // Toggle wall
+                    if (grid[row][col] === WALL) {
+                        grid[row][col] = EMPTY;
+                    } else {
+                        grid[row][col] = WALL;
+                    }
+                    updateCell(row, col);
+                }
+            }
+
+            // Handle cell hover (for drawing walls)
+            function handleCellHover(e) {
+                if (e.buttons !== 1 || visualizationRunning) return;
+                
+                const row = parseInt(e.target.dataset.row);
+                const col = parseInt(e.target.dataset.col);
+                
+                if (currentMode === 'wall' && grid[row][col] !== START && grid[row][col] !== END) {
+                    grid[row][col] = WALL;
+                    updateCell(row, col);
+                }
+            }
+
+            // Handle touch events for mobile
+            function handleCellTouch(e) {
+                if (visualizationRunning && !visualizationPaused) return;
+                
+                e.preventDefault();
+                const touch = e.touches[0] || e.changedTouches[0];
+                const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                
+                if (element && element.classList.contains('cell')) {
+                    const row = parseInt(element.dataset.row);
+                    const col = parseInt(element.dataset.col);
+                    
+                    if (currentMode === 'start') {
+                        // Remove previous start
+                        if (startPosition) {
+                            const [prevRow, prevCol] = startPosition;
+                            grid[prevRow][prevCol] = EMPTY;
+                            updateCell(prevRow, prevCol);
+                        }
+                        
+                        // Set new start
+                        grid[row][col] = START;
+                        startPosition = [row, col];
+                        updateCell(row, col);
+                    } else if (currentMode === 'end') {
+                        // Remove previous end
+                        if (endPosition) {
+                            const [prevRow, prevCol] = endPosition;
+                            grid[prevRow][prevCol] = EMPTY;
+                            updateCell(prevRow, prevCol);
+                        }
+                        
+                        // Set new end
+                        grid[row][col] = END;
+                        endPosition = [row, col];
+                        updateCell(row, col);
+                    } else if (currentMode === 'wall') {
+                        // Toggle wall
+                        if (grid[row][col] === WALL) {
+                            grid[row][col] = EMPTY;
+                        } else {
+                            grid[row][col] = WALL;
+                        }
+                        updateCell(row, col);
+                    }
+                }
+            }
+
+            // Update cell appearance based on its state
+            function updateCell(row, col) {
+                const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+                if (!cell) return;
+                
+                cell.className = 'cell';
+                
+                switch(grid[row][col]) {
+                    case START:
+                        cell.classList.add('start');
+                        break;
+                    case END:
+                        cell.classList.add('end');
+                        break;
+                    case WALL:
+                        cell.classList.add('wall');
+                        break;
+                    case VISITED:
+                        cell.classList.add('visited');
+                        break;
+                    case PATH:
+                        cell.classList.add('path');
+                        break;
+                    case CURRENT:
+                        cell.classList.add('current');
+                        break;
+                    default:
+                        // Empty cell
+                        break;
+                }
+            }
+
+            // Generate random maze using DFS
+            function generateRandomMaze() {
+                if (visualizationRunning) return;
+                
+                initializeGrid(gridSize);
+                
+                // Create a new grid for maze generation
+                const mazeGrid = Array(gridSize).fill().map(() => Array(gridSize).fill(WALL));
+                
+                // Start from a random position
+                const startRow = Math.floor(Math.random() * gridSize);
+                const startCol = Math.floor(Math.random() * gridSize);
+                const stack = [[startRow, startCol]];
+                mazeGrid[startRow][startCol] = EMPTY;
+                
+                // Directions: up, right, down, left
+                const directions = [[-2, 0], [0, 2], [2, 0], [0, -2]];
+                
+                while (stack.length > 0) {
+                    const [row, col] = stack.pop();
+                    
+                    // Shuffle directions
+                    directions.sort(() => Math.random() - 0.5);
+                    
+                    for (const [dr, dc] of directions) {
+                        const newRow = row + dr;
+                        const newCol = col + dc;
+                        
+                        if (newRow > 0 && newRow < gridSize - 1 && 
+                            newCol > 0 && newCol < gridSize - 1 && 
+                            mazeGrid[newRow][newCol] === WALL) {
+                            
+                            // Carve path
+                            mazeGrid[newRow][newCol] = EMPTY;
+                            mazeGrid[row + dr/2][col + dc/2] = EMPTY;
+                            stack.push([newRow, newCol]);
+                        }
+                    }
+                }
+                
+                // Apply maze to our grid
+                for (let i = 0; i < gridSize; i++) {
+                    for (let j = 0; j < gridSize; j++) {
+                        grid[i][j] = mazeGrid[i][j];
+                        updateCell(i, j);
+                    }
+                }
+                
+                // Set random start and end positions
+                setRandomStartEnd();
+            }
+
+            // Set random start and end positions
+            function setRandomStartEnd() {
+                // Find all empty cells
+                const emptyCells = [];
+                for (let i = 0; i < gridSize; i++) {
+                    for (let j = 0; j < gridSize; j++) {
+                        if (grid[i][j] === EMPTY) {
+                            emptyCells.push([i, j]);
+                        }
+                    }
+                }
+                
+                if (emptyCells.length < 2) return;
+                
+                // Shuffle and pick first two
+                emptyCells.sort(() => Math.random() - 0.5);
+                
+                // Set start
+                const [startRow, startCol] = emptyCells[0];
+                grid[startRow][startCol] = START;
+                startPosition = [startRow, startCol];
+                updateCell(startRow, startCol);
+                
+                // Set end
+                const [endRow, endCol] = emptyCells[1];
+                grid[endRow][endCol] = END;
+                endPosition = [endRow, endCol];
+                updateCell(endRow, endCol);
+            }
+
+            // Clear walls but keep start and end positions
+            function clearWalls() {
+                if (visualizationRunning) return;
+                
+                for (let i = 0; i < gridSize; i++) {
+                    for (let j = 0; j < gridSize; j++) {
+                        if (grid[i][j] === WALL) {
+                            grid[i][j] = EMPTY;
+                            updateCell(i, j);
+                        }
+                    }
+                }
+            }
+
+            // Reset visualization
+            function resetVisualization() {
+                if (visualizationRunning && !visualizationPaused) return;
+                
+                // Clear all timeouts
+                timeoutIds.forEach(timeoutId => clearTimeout(timeoutId));
+                timeoutIds = [];
+                
+                visualizationRunning = false;
+                visualizationPaused = false;
+                visitedCount = 0;
+                pathLength = 0;
+                updateStats();
+                
+                for (let i = 0; i < gridSize; i++) {
+                    for (let j = 0; j < gridSize; j++) {
+                        if (grid[i][j] === VISITED || grid[i][j] === PATH || grid[i][j] === CURRENT) {
+                            grid[i][j] = EMPTY;
+                            updateCell(i, j);
+                        }
+                    }
+                }
+                
+                startBtn.textContent = 'Start';
+                startBtn.disabled = false;
+                pauseBtn.disabled = true;
+                statusElement.textContent = 'Ready';
+                statusElement.className = 'text-green-600';
+            }
+
+            // Update statistics display
+            function updateStats() {
+                stepsElement.textContent = visitedCount + pathLength;
+                visitedCountElement.textContent = visitedCount;
+                pathLengthElement.textContent = pathLength;
+            }
+
+            // Visualize pathfinding algorithm
+            async function visualizeAlgorithm() {
+                if (visualizationRunning || !startPosition || !endPosition) return;
+                
+                visualizationRunning = true;
+                startBtn.disabled = true;
+                pauseBtn.disabled = false;
+                statusElement.textContent = 'Running';
+                statusElement.className = 'text-blue-600';
+                
+                // Reset any previous visualization
+                resetVisualization();
+                visitedCount = 0;
+                pathLength = 0;
+                updateStats();
+                
+                const algorithm = algorithmSelect.value;
+                const speed = 100 - (speedSlider.value * 10); // Convert scale to milliseconds
+                
+                if (algorithm === 'bfs') {
+                    await visualizeBFS(speed);
+                } else {
+                    await visualizeDFS(speed);
+                }
+                
+                visualizationRunning = false;
+                startBtn.disabled = false;
+                pauseBtn.disabled = true;
+            }
+
+            // Visualize BFS algorithm
+            async function visualizeBFS(speed) {
+                return new Promise(resolve => {
+                    const [startRow, startCol] = startPosition;
+                    const [endRow, endCol] = endPosition;
+                    
+                    const queue = [[startRow, startCol]];
+                    const visited = Array(gridSize).fill().map(() => Array(gridSize).fill(false));
+                    visited[startRow][startCol] = true;
+                    
+                    const predecessors = Array(gridSize).fill().map(() => Array(gridSize).fill(null));
+                    
+                    let found = false;
+                    let steps = 0;
+                    
+                    // Process queue
+                    const processQueue = () => {
+                        if (visualizationPaused) {
+                            timeoutIds.push(setTimeout(processQueue, 100));
+                            return;
+                        }
+                        
+                        if (queue.length === 0 || found) {
+                            if (found) {
+                                backtrackPath(predecessors, [endRow, endCol], speed);
+                            } else {
+                                statusElement.textContent = 'No Path Found';
+                                statusElement.className = 'text-red-600';
+                                resolve();
+                            }
+                            return;
+                        }
+                        
+                        const [row, col] = queue.shift();
+                        
+                        if (row === endRow && col === endCol) {
+                            found = true;
+                            timeoutIds.push(setTimeout(processQueue, speed));
+                            return;
+                        }
+                        
+                        // Mark as visited (but not if it's start or end)
+                        if (grid[row][col] !== START && grid[row][col] !== END) {
+                            grid[row][col] = VISITED;
+                            visitedCount++;
+                            updateCell(row, col);
+                            updateStats();
+                        }
+                        
+                        // Check all four directions
+                        const directions = [[-1, 0], [0, 1], [1, 0], [0, -1]];
+                        
+                        for (const [dr, dc] of directions) {
+                            const newRow = row + dr;
+                            const newCol = col + dc;
+                            
+                            if (newRow >= 0 && newRow < gridSize && 
+                                newCol >= 0 && newCol < gridSize && 
+                                !visited[newRow][newCol] && 
+                                grid[newRow][newCol] !== WALL) {
+                                
+                                visited[newRow][newCol] = true;
+                                predecessors[newRow][newCol] = [row, col];
+                                queue.push([newRow, newCol]);
+                                
+                                // Highlight current cell being processed
+                                if (grid[newRow][newCol] !== END) {
+                                    grid[newRow][newCol] = CURRENT;
+                                    updateCell(newRow, newCol);
+                                    timeoutIds.push(setTimeout(() => {
+                                        if (grid[newRow][newCol] === CURRENT && grid[newRow][newCol] !== END) {
+                                            grid[newRow][newCol] = EMPTY;
+                                            updateCell(newRow, newCol);
+                                        }
+                                    }, speed));
+                                }
+                            }
+                        }
+                        
+                        steps++;
+                        timeoutIds.push(setTimeout(processQueue, speed));
+                    };
+                    
+                    processQueue();
+                });
+            }
+
+            // Visualize DFS algorithm
+            async function visualizeDFS(speed) {
+                return new Promise(resolve => {
+                    const [startRow, startCol] = startPosition;
+                    const [endRow, endCol] = endPosition;
+                    
+                    const stack = [[startRow, startCol]];
+                    const visited = Array(gridSize).fill().map(() => Array(gridSize).fill(false));
+                    visited[startRow][startCol] = true;
+                    
+                    const predecessors = Array(gridSize).fill().map(() => Array(gridSize).fill(null));
+                    
+                    let found = false;
+                    let steps = 0;
+                    
+                    // Process stack
+                    const processStack = () => {
+                        if (visualizationPaused) {
+                            timeoutIds.push(setTimeout(processStack, 100));
+                            return;
+                        }
+                        
+                        if (stack.length === 0 || found) {
+                            if (found) {
+                                backtrackPath(predecessors, [endRow, endCol], speed);
+                            } else {
+                                statusElement.textContent = 'No Path Found';
+                                statusElement.className = 'text-red-600';
+                                resolve();
+                            }
+                            return;
+                        }
+                        
+                        const [row, col] = stack.pop();
+                        
+                        if (row === endRow && col === endCol) {
+                            found = true;
+                            timeoutIds.push(setTimeout(processStack, speed));
+                            return;
+                        }
+                        
+                        // Mark as visited (but not if it's start or end)
+                        if (grid[row][col] !== START && grid[row][col] !== END) {
+                            grid[row][col] = VISITED;
+                            visitedCount++;
+                            updateCell(row, col);
+                            updateStats();
+                        }
+                        
+                        // Check all four directions in random order for DFS
+                        const directions = [[-1, 0], [0, 1], [1, 0], [0, -1]];
+                        directions.sort(() => Math.random() - 0.5);
+                        
+                        for (const [dr, dc] of directions) {
+                            const newRow = row + dr;
+                            const newCol = col + dc;
+                            
+                            if (newRow >= 0 && newRow < gridSize && 
+                                newCol >= 0 && newCol < gridSize && 
+                                !visited[newRow][newCol] && 
+                                grid[newRow][newCol] !== WALL) {
+                                
+                                visited[newRow][newCol] = true;
+                                predecessors[newRow][newCol] = [row, col];
+                                stack.push([newRow, newCol]);
+                                
+                                // Highlight current cell being processed
+                                if (grid[newRow][newCol] !== END) {
+                                    grid[newRow][newCol] = CURRENT;
+                                    updateCell(newRow, newCol);
+                                    timeoutIds.push(setTimeout(() => {
+                                        if (grid[newRow][newCol] === CURRENT && grid[newRow][newCol] !== END) {
+                                            grid[newRow][newCol] = EMPTY;
+                                            updateCell(newRow, newCol);
+                                        }
+                                    }, speed));
+                                }
+                            }
+                        }
+                        
+                        steps++;
+                        timeoutIds.push(setTimeout(processStack, speed));
+                    };
+                    
+                    processStack();
+                });
+            }
+
+            // Backtrack from end to start to show path
+            function backtrackPath(predecessors, [endRow, endCol], speed) {
+                let path = [[endRow, endCol]];
+                let [row, col] = predecessors[endRow][endCol];
+                
+                while (row !== null && col !== null && 
+                       !(row === startPosition[0] && col === startPosition[1])) {
+                    path.push([row, col]);
+                    [row, col] = predecessors[row][col];
+                }
+                
+                path.reverse();
+                
+                let delay = 0;
+                for (const [r, c] of path) {
+                    if (grid[r][c] !== START && grid[r][c] !== END) {
+                        timeoutIds.push(setTimeout(() => {
+                            grid[r][c] = PATH;
+                            pathLength++;
+                            updateCell(r, c);
+                            updateStats();
+                            statusElement.textContent = 'Path Found';
+                            statusElement.className = 'text-green-600';
+                        }, delay));
+                        delay += speed;
+                    }
+                }
+                
+                timeoutIds.push(setTimeout(() => {}, delay));
+            }
+
+            // Toggle pause/continue visualization
+            function togglePause() {
+                if (!visualizationRunning) return;
+                
+                visualizationPaused = !visualizationPaused;
+                
+                if (visualizationPaused) {
+                    pauseBtn.textContent = 'Continue';
+                    statusElement.textContent = 'Paused';
+                    statusElement.className = 'text-yellow-600';
+                } else {
+                    pauseBtn.textContent = 'Pause';
+                    statusElement.textContent = 'Running';
+                    statusElement.className = 'text-blue-600';
+                }
+            }
+
+            // Event listeners
+            gridSizeSelect.addEventListener('change', () => {
+                initializeGrid(parseInt(gridSizeSelect.value));
+            });
+            
+            generateMazeBtn.addEventListener('click', generateRandomMaze);
+            
+            addStartBtn.addEventListener('click', () => {
+                currentMode = 'start';
+                addStartBtn.classList.add('ring-2', 'ring-offset-2', 'ring-blue-500');
+                addEndBtn.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-500');
+                addWallBtn.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-500');
+            });
+            
+            addEndBtn.addEventListener('click', () => {
+                currentMode = 'end';
+                addEndBtn.classList.add('ring-2', 'ring-offset-2', 'ring-blue-500');
+                addStartBtn.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-500');
+                addWallBtn.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-500');
+            });
+            
+            addWallBtn.addEventListener('click', () => {
+                currentMode = 'wall';
+                addWallBtn.classList.add('ring-2', 'ring-offset-2', 'ring-blue-500');
+                addStartBtn.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-500');
+                addEndBtn.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-500');
+            });
+            
+            clearWallsBtn.addEventListener('click', clearWalls);
+            
+            startBtn.addEventListener('click', () => {
+                if (visualizationRunning && visualizationPaused) {
+                    togglePause();
+                } else {
+                    visualizeAlgorithm();
+                }
+            });
+            
+            pauseBtn.addEventListener('click', togglePause);
+            
+            resetBtn.addEventListener('click', resetVisualization);
+            
+            // Initialize with default grid size
+            initializeGrid(gridSize);
+        });
+    </script>
+</body>
+</html>
