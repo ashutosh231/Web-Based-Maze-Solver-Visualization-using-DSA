@@ -6,539 +6,1015 @@
     <title>Maze Solver Visualization</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Dynamic Background Animation */
+        .background-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: -2;
+            overflow: hidden;
+        }
+
+        .particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* Floating shapes */
+        .shape {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.05);
+            animation: floatShape 15s infinite ease-in-out;
+        }
+
+        @keyframes floatShape {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        /* Glass morphism effect */
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        /* Enhanced grid styles - FIXED */
+        .grid-container {
+            perspective: 1000px;
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+            display: inline-block;
+            margin: 0 auto;
+        }
+
         .cell {
             width: 30px;
             height: 30px;
-            border: 1px solid #ccc;
+            border: 2px solid rgba(255, 255, 255, 0.4);
             display: inline-block;
-            margin: 1px;
-            transition: background-color 0.3s ease;
-            touch-action: manipulation;
+            margin: 0px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .cell::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+
+        .cell:hover::before {
+            transform: translateX(100%);
+        }
+
+        .cell:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.8);
         }
 
         .start {
-            background-color: #4CAF50;
+            background: linear-gradient(135deg, #4CAF50, #45a049) !important;
+            border: 3px solid #2E7D32 !important;
+            box-shadow: 0 0 25px rgba(76, 175, 80, 0.8), inset 0 0 15px rgba(255, 255, 255, 0.2);
+            animation: pulse 2s infinite;
         }
 
         .end {
-            background-color: #F44336;
+            background: linear-gradient(135deg, #F44336, #d32f2f) !important;
+            border: 3px solid #C62828 !important;
+            box-shadow: 0 0 25px rgba(244, 67, 54, 0.8), inset 0 0 15px rgba(255, 255, 255, 0.2);
+            animation: pulse 2s infinite;
         }
 
         .wall {
-            background-color: #333;
+            background: linear-gradient(135deg, #424242, #212121) !important;
+            border: 3px solid #1A1A1A !important;
+            transform: scale(0.95);
+            border-radius: 4px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
         }
 
         .visited {
-            background-color: #2196F3;
-            animation: visitedAnimation 0.5s ease-out;
+            background: linear-gradient(135deg, #2196F3, #1976D2) !important;
+            border: 3px solid #1565C0 !important;
+            animation: visitedAnimation 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 15px rgba(33, 150, 243, 0.6);
         }
 
         .path {
-            background-color: #FFEB3B;
-            animation: pathAnimation 1s ease-out;
+            background: linear-gradient(135deg, #FFEB3B, #FFC107) !important;
+            border: 3px solid #FF8F00 !important;
+            animation: pathAnimation 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 20px rgba(255, 235, 59, 0.8);
         }
 
         .current {
-            background-color: #9C27B0;
+            background: linear-gradient(135deg, #9C27B0, #7B1FA2) !important;
+            border: 3px solid #4A148C !important;
+            animation: currentAnimation 1s infinite;
+            box-shadow: 0 0 25px rgba(156, 39, 176, 1);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
 
         @keyframes visitedAnimation {
             0% {
-                transform: scale(0.5);
-                background-color: #64B5F6;
+                transform: scale(0.3) rotateZ(0deg);
+                opacity: 0;
             }
             50% {
-                transform: scale(1.2);
-                background-color: #2196F3;
+                transform: scale(1.3) rotateZ(180deg);
+                opacity: 1;
             }
             100% {
-                transform: scale(1);
-                background-color: #2196F3;
+                transform: scale(1) rotateZ(360deg);
+                opacity: 1;
             }
         }
 
         @keyframes pathAnimation {
             0% {
-                transform: scale(0.5);
-                background-color: #FFF176;
+                transform: scale(0.3) rotateY(0deg);
+                opacity: 0;
             }
             50% {
-                transform: scale(1.2);
-                background-color: #FFEB3B;
+                transform: scale(1.4) rotateY(180deg);
+                opacity: 1;
             }
             100% {
-                transform: scale(1);
-                background-color: #FFEB3B;
+                transform: scale(1) rotateY(360deg);
+                opacity: 1;
             }
         }
 
+        @keyframes currentAnimation {
+            0%, 100% { 
+                transform: scale(1) rotateZ(0deg);
+                box-shadow: 0 0 25px rgba(156, 39, 176, 1);
+            }
+            50% { 
+                transform: scale(1.2) rotateZ(180deg);
+                box-shadow: 0 0 35px rgba(156, 39, 176, 1);
+            }
+        }
+
+        /* Enhanced buttons */
+        .btn {
+            position: relative;
+            overflow: hidden;
+            transform: translateZ(0);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* Cards with glass effect */
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 16px 40px rgba(31, 38, 135, 0.5);
+        }
+
+        /* Enhanced statistics */
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.02);
+        }
+
+        /* Loading animation */
+        .loading {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: loading 2s infinite;
+        }
+
+        @keyframes loading {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* Enhanced controls */
+        .control-group {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Responsive design */
         @media (max-width: 768px) {
             .cell {
-                width: 20px;
-                height: 20px;
+                width: 24px;
+                height: 24px;
+            }
+            
+            .particles {
+                display: none;
+            }
+            
+            .grid-container {
+                padding: 20px;
+            }
+        }
+
+        /* Speed slider enhancement */
+        .speed-slider {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            height: 8px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .speed-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .speed-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Enhanced text styling */
+        .text-glow {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        /* Algorithm info cards */
+        .algo-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .algo-card:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-3px);
+        }
+
+        /* Grid layout fix */
+        .grid-wrapper {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        /* Credits footer styling */
+        .credits-footer {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 2rem;
+            padding: 2rem 0;
+            text-align: center;
+        }
+
+        .credits-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .credits-names {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .developer-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            min-width: 200px;
+        }
+
+        .developer-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .developer-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 0.5rem;
+        }
+
+        .developer-info {
+            font-size: 0.9rem;
+            color: #b0b0b0;
+            margin-bottom: 0.25rem;
+        }
+
+        .university {
+            font-size: 0.8rem;
+            color: #8a8a8a;
+            font-style: italic;
+        }
+
+        @media (max-width: 640px) {
+            .credits-names {
+                flex-direction: column;
+                gap: 1rem;
             }
         }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
-        <header class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-gray-800 mb-2">Maze Solver Visualization</h1>
-            <p class="text-gray-600">Visualizing BFS and DFS pathfinding algorithms</p>
+<body class="min-h-screen text-white overflow-x-hidden">
+    <!-- Dynamic Background -->
+    <div class="background-animation">
+        <div class="particles" id="particles"></div>
+        <div class="absolute inset-0">
+            <div class="shape w-32 h-32 rounded-full top-10 left-10" style="animation-delay: 0s;"></div>
+            <div class="shape w-24 h-24 rounded-lg top-1/3 right-20" style="animation-delay: 2s;"></div>
+            <div class="shape w-20 h-20 rounded-full bottom-20 left-1/4" style="animation-delay: 4s;"></div>
+            <div class="shape w-28 h-28 rounded-lg bottom-10 right-10" style="animation-delay: 6s;"></div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8 relative z-10">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-5xl font-bold text-glow mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-100 to-white">
+                Maze Solver Visualization
+            </h1>
+            <p class="text-xl text-gray-200 opacity-90">
+                Visualizing BFS and DFS pathfinding algorithms with beautiful animations
+            </p>
         </header>
 
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <div class="flex flex-col md:flex-row gap-8">
+        <!-- Main Content -->
+        <div class="card p-8 mb-8">
+            <div class="flex flex-col xl:flex-row gap-8">
+                <!-- Grid Section -->
                 <div class="flex-1">
-                    <div class="flex justify-between items-center mb-4">
-                        <div class="flex items-center space-x-4">
-                            <label for="grid-size" class="font-medium text-gray-700">Grid Size:</label>
-                            <select id="grid-size" class="border rounded px-3 py-1">
-                                <option value="10">10x10</option>
-                                <option value="15">15x15</option>
-                                <option value="20">20x20</option>
-                                <option value="25">25x25</option>
-                            </select>
+                    <div class="control-group mb-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                            <div class="flex items-center space-x-4">
+                                <label for="grid-size" class="font-medium text-gray-200">Grid Size:</label>
+                                <select id="grid-size" class="glass px-4 py-2 rounded-lg text-white bg-transparent border-0 focus:ring-2 focus:ring-blue-400 transition-all">
+                                    <option value="10" class="bg-gray-800">10x10</option>
+                                    <option value="15" class="bg-gray-800" selected>15x15</option>
+                                    <option value="20" class="bg-gray-800">20x20</option>
+                                    <option value="25" class="bg-gray-800">25x25</option>
+                                </select>
+                            </div>
+                            <button id="generate-maze" class="btn bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-2 rounded-lg font-medium">
+                                🎲 Generate Maze
+                            </button>
                         </div>
-                        <button id="generate-maze" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded">
-                            Generate Maze
-                        </button>
                     </div>
 
-                    <div class="grid-container mb-4 overflow-auto">
-                        <!-- Grid will be generated here -->
+                    <div class="grid-wrapper mb-6">
+                        <div class="grid-container">
+                            <!-- Grid will be generated here -->
+                        </div>
                     </div>
 
-                    <div class="flex space-x-4">
-                        <button id="add-start" class="bg-green-500 hover:bg-green-600 text-white px-4 py-1 rounded">
-                            Set Start
-                        </button>
-                        <button id="add-end" class="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded">
-                            Set End
-                        </button>
-                        <button id="add-wall" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-1 rounded">
-                            Add Wall
-                        </button>
-                        <button id="clear-walls" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded">
-                            Clear Walls
-                        </button>
+                    <div class="control-group">
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                            <button id="add-start" class="btn bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-2 rounded-lg font-medium">
+                                🏁 Start
+                            </button>
+                            <button id="add-end" class="btn bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-lg font-medium">
+                                🎯 End
+                            </button>
+                            <button id="add-wall" class="btn bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white px-4 py-2 rounded-lg font-medium">
+                                🧱 Wall
+                            </button>
+                            <button id="clear-walls" class="btn bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white px-4 py-2 rounded-lg font-medium">
+                                🗑️ Clear
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <div class="flex-1 md:w-96">
-                    <div class="flex justify-between items-center mb-4">
-                        <div class="flex items-center space-x-4">
-                            <label for="algorithm" class="font-medium text-gray-700">Algorithm:</label>
-                            <select id="algorithm" class="border rounded px-3 py-1">
-                                <option value="bfs">Breadth-First Search (BFS)</option>
-                                <option value="dfs">Depth-First Search (DFS)</option>
+                <!-- Control Panel -->
+                <div class="xl:w-96">
+                    <div class="control-group mb-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <label for="algorithm" class="font-medium text-gray-200">Algorithm:</label>
+                            <select id="algorithm" class="glass px-4 py-2 rounded-lg text-white bg-transparent border-0 focus:ring-2 focus:ring-blue-400 transition-all">
+                                <option value="bfs" class="bg-gray-800">🌊 Breadth-First Search</option>
+                                <option value="dfs" class="bg-gray-800">🌳 Depth-First Search</option>
                             </select>
                         </div>
-                    </div>
 
-                    <div class="flex flex-col space-y-4 mb-6">
-                        <div>
-                            <label for="speed" class="block font-medium text-gray-700 mb-1">Speed</label>
-                            <input type="range" id="speed" min="1" max="10" value="5" class="w-full">
-                            <div class="flex justify-between text-sm text-gray-600">
-                                <span>Slow</span>
-                                <span>Fast</span>
+                        <div class="mb-4">
+                            <label for="speed" class="block font-medium text-gray-200 mb-2">Speed Control</label>
+                            <input type="range" id="speed" min="1" max="10" value="5" class="speed-slider w-full">
+                            <div class="flex justify-between text-sm text-gray-300 mt-2">
+                                <span>🐌 Slow</span>
+                                <span>⚡ Fast</span>
                             </div>
                         </div>
 
-                        <div class="bg-gray-50 p-3 rounded">
-                            <div class="grid grid-cols-2 gap-2 mb-2">
-                                <div class="flex items-center">
-                                    <div class="w-4 h-4 bg-green-500 mr-2"></div>
-                                    <span>Start</span>
+                        <div class="control-group mb-4">
+                            <div class="grid grid-cols-3 gap-3 mb-4">
+                                <button id="start" class="btn bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-4 py-3 rounded-lg font-medium">
+                                    ▶️ Start
+                                </button>
+                                <button id="pause" class="btn bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white px-4 py-3 rounded-lg font-medium" disabled>
+                                    ⏸️ Pause
+                                </button>
+                                <button id="reset" class="btn bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-3 rounded-lg font-medium">
+                                    🔄 Reset
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="grid grid-cols-3 gap-2 mb-4">
+                                <div class="flex items-center justify-center">
+                                    <div class="w-4 h-4 bg-gradient-to-r from-green-500 to-green-600 rounded mr-2"></div>
+                                    <span class="text-sm">Start</span>
                                 </div>
-                                <div class="flex items-center">
-                                    <div class="w-4 h-4 bg-red-500 mr-2"></div>
-                                    <span>End</span>
+                                <div class="flex items-center justify-center">
+                                    <div class="w-4 h-4 bg-gradient-to-r from-red-500 to-red-600 rounded mr-2"></div>
+                                    <span class="text-sm">End</span>
                                 </div>
-                                <div class="flex items-center">
-                                    <div class="w-4 h-4 bg-gray-700 mr-2"></div>
-                                    <span>Wall</span>
+                                <div class="flex items-center justify-center">
+                                    <div class="w-4 h-4 bg-gradient-to-r from-gray-600 to-gray-700 rounded mr-2"></div>
+                                    <span class="text-sm">Wall</span>
                                 </div>
-                                <div class="flex items-center">
-                                    <div class="w-4 h-4 bg-blue-500 mr-2"></div>
-                                    <span>Visited</span>
+                                <div class="flex items-center justify-center">
+                                    <div class="w-4 h-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded mr-2"></div>
+                                    <span class="text-sm">Visited</span>
                                 </div>
-                                <div class="flex items-center">
-                                    <div class="w-4 h-4 bg-purple-500 mr-2"></div>
-                                    <span>Current</span>
+                                <div class="flex items-center justify-center">
+                                    <div class="w-4 h-4 bg-gradient-to-r from-purple-500 to-purple-600 rounded mr-2"></div>
+                                    <span class="text-sm">Current</span>
                                 </div>
-                                <div class="flex items-center">
-                                    <div class="w-4 h-4 bg-yellow-400 mr-2"></div>
-                                    <span>Path</span>
+                                <div class="flex items-center justify-center">
+                                    <div class="w-4 h-4 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded mr-2"></div>
+                                    <span class="text-sm">Path</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="flex justify-between space-x-2 mb-4">
-                        <button id="start" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded flex-1">
-                            Start
-                        </button>
-                        <button id="pause" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded flex-1" disabled>
-                            Pause
-                        </button>
-                        <button id="reset" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded flex-1">
-                            Reset
-                        </button>
-                    </div>
-
-                    <div class="bg-gray-50 p-4 rounded">
-                        <h3 class="font-medium text-gray-700 mb-2">Statistics</h3>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>Steps:</div>
-                            <div id="steps">0</div>
-                            <div>Visited Cells:</div>
-                            <div id="visited-count">0</div>
-                            <div>Path Length:</div>
-                            <div id="path-length">0</div>
-                            <div>Status:</div>
-                            <div id="status" class="text-green-600">Ready</div>
+                    <!-- Enhanced Statistics -->
+                    <div class="control-group">
+                        <h3 class="font-semibold text-gray-200 mb-4 text-lg">📊 Statistics</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="stat-item">
+                                <div class="text-sm text-gray-300">Steps</div>
+                                <div id="steps" class="text-xl font-bold text-blue-400">0</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="text-sm text-gray-300">Visited</div>
+                                <div id="visited-count" class="text-xl font-bold text-purple-400">0</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="text-sm text-gray-300">Path Length</div>
+                                <div id="path-length" class="text-xl font-bold text-yellow-400">0</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="text-sm text-gray-300">Status</div>
+                                <div id="status" class="text-lg font-bold text-green-400">Ready</div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">How to Use</h2>
-            <div class="grid md:grid-cols-2 gap-4">
+        <!-- Algorithm Information -->
+        <div class="grid md:grid-cols-2 gap-8 mb-8">
+            <div class="algo-card">
+                <h3 class="text-2xl font-bold text-blue-400 mb-3">🌊 Breadth-First Search</h3>
+                <p class="text-gray-300 mb-4">
+                    BFS explores all neighbors at the current depth before moving deeper. It guarantees the shortest path in unweighted graphs.
+                </p>
+                <div class="space-y-2">
+                    <div class="flex items-center text-gray-400">
+                        <span class="mr-2">✅</span>
+                        <span>Finds shortest path</span>
+                    </div>
+                    <div class="flex items-center text-gray-400">
+                        <span class="mr-2">🔄</span>
+                        <span>Uses queue (FIFO)</span>
+                    </div>
+                    <div class="flex items-center text-gray-400">
+                        <span class="mr-2">⚡</span>
+                        <span>Explores systematically</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="algo-card">
+                <h3 class="text-2xl font-bold text-purple-400 mb-3">🌳 Depth-First Search</h3>
+                <p class="text-gray-300 mb-4">
+                    DFS explores as far as possible along each branch before backtracking. It may not find the shortest path but uses less memory.
+                </p>
+                <div class="space-y-2">
+                    <div class="flex items-center text-gray-400">
+                        <span class="mr-2">📚</span>
+                        <span>Uses stack (LIFO)</span>
+                    </div>
+                    <div class="flex items-center text-gray-400">
+                        <span class="mr-2">💾</span>
+                        <span>Memory efficient</span>
+                    </div>
+                    <div class="flex items-center text-gray-400">
+                        <span class="mr-2">🎯</span>
+                        <span>May find path faster</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="card p-6">
+            <h2 class="text-2xl font-bold text-center mb-6 text-glow">🎮 How to Use</h2>
+            <div class="grid md:grid-cols-2 gap-6 text-gray-300">
                 <div>
-                    <h3 class="font-medium text-gray-700 mb-2">Grid Controls</h3>
-                    <ul class="list-disc pl-5 text-gray-600 space-y-1">
-                        <li>Click <span class="font-medium">Set Start</span> then click on a cell to place the start position</li>
-                        <li>Click <span class="font-medium">Set End</span> then click on a cell to place the end position</li>
-                        <li>Click <span class="font-medium">Add Wall</span> then click and drag to draw walls</li>
-                        <li>Use <span class="font-medium">Generate Maze</span> to create random walls</li>
-                        <li>Use <span class="font-medium">Clear Walls</span> to remove all walls</li>
-                        <li>Change grid size from the dropdown</li>
+                    <h3 class="font-semibold mb-3 text-blue-400">🎯 Grid Controls</h3>
+                    <ul class="space-y-2">
+                        <li>• Click 🏁 Start button, then click a cell to set start position</li>
+                        <li>• Click 🎯 End button, then click on a cell to set end position</li>
+                        <li>• Click 🧱 Wall button, then click and drag to draw walls</li>
+                        <li>• Use 🎲 Generate Maze to create random mazes</li>
+                        <li>• Use 🗑️ Clear to remove all walls</li>
                     </ul>
                 </div>
                 <div>
-                    <h3 class="font-medium text-gray-700 mb-2">Algorithm Controls</h3>
-                    <ul class="list-disc pl-5 text-gray-600 space-y-1">
-                        <li>Select algorithm (BFS or DFS)</li>
-                        <li>Adjust speed with the slider</li>
-                        <li>Click <span class="font-medium">Start</span> to begin visualization</li>
-                        <li>Click <span class="font-medium">Pause</span> to pause visualization</li>
-                        <li>Click <span class="font-medium">Reset</span> to clear visualization</li>
+                    <h3 class="font-semibold mb-3 text-purple-400">⚡ Algorithm Controls</h3>
+                    <ul class="space-y-2">
+                        <li>• Select your preferred algorithm (BFS/DFS)</li>
+                        <li>• Adjust visualization speed with the slider</li>
+                        <li>• Click ▶️ Start to begin the visualization</li>
+                        <li>• Use ⏸️ Pause to pause/resume</li>
+                        <li>• Click 🔄 Reset to clear the visualization</li>
                     </ul>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-lg p-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Algorithm Information</h2>
-            <div class="grid md:grid-cols-2 gap-6">
-                <div>
-                    <h3 class="text-xl font-medium text-gray-700 mb-2">Breadth-First Search (BFS)</h3>
-                    <p class="text-gray-600 mb-3">
-                        BFS explores all neighbor nodes at the present depth prior to moving on to nodes at the next depth level. It uses a queue and finds the shortest path.
-                    </p>
-                    <div class="bg-gray-50 p-3 rounded">
-                        <h4 class="font-medium text-gray-700 mb-1">Characteristics:</h4>
-                        <ul class="list-disc pl-5 text-gray-600 space-y-1">
-                            <li>Guaranteed to find the shortest path</li>
-                            <li>Uses a queue (FIFO)</li>
-                            <li>Explores all possible directions equally</li>
-                            <li>Memory intensive for large grids</li>
-                        </ul>
-                    </div>
+        <!-- Credits Footer -->
+        <div class="credits-footer">
+            <div class="credits-title">
+                💻 Made with ❤️ by
+            </div>
+            <div class="credits-names">
+                <div class="developer-card">
+                    <div class="developer-name">Ashutosh Kumar</div>
+                    <div class="developer-info">B.Tech CSE</div>
+                    <div class="university">Lovely Professional University</div>
                 </div>
-                <div>
-                    <h3 class="text-xl font-medium text-gray-700 mb-2">Depth-First Search (DFS)</h3>
-                    <p class="text-gray-600 mb-3">
-                        DFS explores as far as possible along each branch before backtracking. It uses a stack (or recursion) and may not find the shortest path.
-                    </p>
-                    <div class="bg-gray-50 p-3 rounded">
-                        <h4 class="font-medium text-gray-700 mb-1">Characteristics:</h4>
-                        <ul class="list-disc pl-5 text-gray-600 space-y-1">
-                            <li>Does not guarantee shortest path</li>
-                            <li>Uses a stack (LIFO) or recursion</li>
-                            <li>May be faster for certain maze configurations</li>
-                            <li>Uses less memory than BFS</li>
-                        </ul>
-                    </div>
+                <div class="developer-card">
+                    <div class="developer-name">Dhruv Singh</div>
+                    <div class="developer-info">B.Tech CSE</div>
+                    <div class="university">Lovely Professional University</div>
                 </div>
+            </div>
+            <div class="text-sm text-gray-400 mt-4">
+                🚀 Pathfinding Algorithm Visualization Project
             </div>
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Constants
-            const EMPTY = 0;
-            const WALL = 1;
-            const START = 2;
-            const END = 3;
-            const VISITED = 4;
-            const PATH = 5;
-            const CURRENT = 6;
+        // Enhanced MazeVisualizer class with optimizations
+        class MazeVisualizer {
+            constructor() {
+                this.EMPTY = 0;
+                this.WALL = 1;
+                this.START = 2;
+                this.END = 3;
+                this.VISITED = 4;
+                this.PATH = 5;
+                this.CURRENT = 6;
 
-            // State variables
-            let gridSize = 15;
-            let grid = [];
-            let visualizationRunning = false;
-            let visualizationPaused = false;
-            let timeoutIds = [];
-            let startPosition = null;
-            let endPosition = null;
-            let currentMode = 'wall'; // 'start', 'end', 'wall'
-            let visitedCount = 0;
-            let pathLength = 0;
+                this.gridSize = 15;
+                this.grid = [];
+                this.visualizationRunning = false;
+                this.visualizationPaused = false;
+                this.animationFrameId = null;
+                this.timeoutIds = new Set();
+                this.startPosition = null;
+                this.endPosition = null;
+                this.currentMode = 'wall';
+                this.visitedCount = 0;
+                this.pathLength = 0;
+                this.isDragging = false;
 
-            // DOM elements
-            const gridContainer = document.querySelector('.grid-container');
-            const gridSizeSelect = document.getElementById('grid-size');
-            const generateMazeBtn = document.getElementById('generate-maze');
-            const addStartBtn = document.getElementById('add-start');
-            const addEndBtn = document.getElementById('add-end');
-            const addWallBtn = document.getElementById('add-wall');
-            const clearWallsBtn = document.getElementById('clear-walls');
-            const algorithmSelect = document.getElementById('algorithm');
-            const speedSlider = document.getElementById('speed');
-            const startBtn = document.getElementById('start');
-            const pauseBtn = document.getElementById('pause');
-            const resetBtn = document.getElementById('reset');
-            const stepsElement = document.getElementById('steps');
-            const visitedCountElement = document.getElementById('visited-count');
-            const pathLengthElement = document.getElementById('path-length');
-            const statusElement = document.getElementById('status');
+                this.initializeDOM();
+                this.bindEvents();
+                this.initializeGrid(this.gridSize);
+                this.createParticles();
+                this.startBackgroundAnimation();
+            }
 
-            // Initialize the grid
-            function initializeGrid(size) {
-                gridSize = size;
-                grid = Array(size).fill().map(() => Array(size).fill(EMPTY));
-                startPosition = null;
-                endPosition = null;
-                visitedCount = 0;
-                pathLength = 0;
-                updateStats();
+            initializeDOM() {
+                this.elements = {
+                    gridContainer: document.querySelector('.grid-container'),
+                    gridSizeSelect: document.getElementById('grid-size'),
+                    generateMazeBtn: document.getElementById('generate-maze'),
+                    addStartBtn: document.getElementById('add-start'),
+                    addEndBtn: document.getElementById('add-end'),
+                    addWallBtn: document.getElementById('add-wall'),
+                    clearWallsBtn: document.getElementById('clear-walls'),
+                    algorithmSelect: document.getElementById('algorithm'),
+                    speedSlider: document.getElementById('speed'),
+                    startBtn: document.getElementById('start'),
+                    pauseBtn: document.getElementById('pause'),
+                    resetBtn: document.getElementById('reset'),
+                    stepsElement: document.getElementById('steps'),
+                    visitedCountElement: document.getElementById('visited-count'),
+                    pathLengthElement: document.getElementById('path-length'),
+                    statusElement: document.getElementById('status')
+                };
+            }
+
+            bindEvents() {
+                this.elements.gridSizeSelect.addEventListener('change', () => {
+                    this.initializeGrid(parseInt(this.elements.gridSizeSelect.value));
+                });
+
+                this.elements.generateMazeBtn.addEventListener('click', () => this.generateRandomMaze());
+                this.elements.addStartBtn.addEventListener('click', () => this.setMode('start'));
+                this.elements.addEndBtn.addEventListener('click', () => this.setMode('end'));
+                this.elements.addWallBtn.addEventListener('click', () => this.setMode('wall'));
+                this.elements.clearWallsBtn.addEventListener('click', () => this.clearWalls());
+                this.elements.startBtn.addEventListener('click', () => this.handleStartClick());
+                this.elements.pauseBtn.addEventListener('click', () => this.togglePause());
+                this.elements.resetBtn.addEventListener('click', () => this.resetVisualization());
+
+                // Mouse events
+                document.addEventListener('mousedown', (e) => {
+                    if (e.target.classList.contains('cell')) {
+                        this.isDragging = true;
+                        this.handleCellInteraction(e.target);
+                    }
+                });
+
+                document.addEventListener('mousemove', (e) => {
+                    if (this.isDragging && e.target.classList.contains('cell')) {
+                        this.handleCellInteraction(e.target);
+                    }
+                });
+
+                document.addEventListener('mouseup', () => {
+                    this.isDragging = false;
+                });
+
+                // Touch events
+                document.addEventListener('touchstart', (e) => {
+                    if (e.target.classList.contains('cell')) {
+                        e.preventDefault();
+                        this.handleCellInteraction(e.target);
+                    }
+                }, { passive: false });
+
+                document.addEventListener('touchmove', (e) => {
+                    if (e.target.classList.contains('cell')) {
+                        e.preventDefault();
+                        this.handleCellInteraction(e.target);
+                    }
+                }, { passive: false });
+            }
+
+            createParticles() {
+                const particlesContainer = document.getElementById('particles');
+                const particleCount = window.innerWidth > 768 ? 50 : 20;
+
+                for (let i = 0; i < particleCount; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.style.left = Math.random() * 100 + '%';
+                    particle.style.width = Math.random() * 10 + 5 + 'px';
+                    particle.style.height = particle.style.width;
+                    particle.style.animationDelay = Math.random() * 20 + 's';
+                    particle.style.animationDuration = (Math.random() * 10 + 15) + 's';
+                    particlesContainer.appendChild(particle);
+                }
+            }
+
+            startBackgroundAnimation() {
+                const shapes = document.querySelectorAll('.shape');
+                shapes.forEach((shape, index) => {
+                    shape.style.animationDelay = index * 2 + 's';
+                });
+            }
+
+            setMode(mode) {
+                this.currentMode = mode;
                 
-                // Clear existing grid
-                gridContainer.innerHTML = '';
+                // Reset all button states
+                [this.elements.addStartBtn, this.elements.addEndBtn, this.elements.addWallBtn].forEach(btn => {
+                    btn.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-400');
+                });
+
+                // Highlight active button
+                const activeBtn = mode === 'start' ? this.elements.addStartBtn : 
+                                 mode === 'end' ? this.elements.addEndBtn : 
+                                 this.elements.addWallBtn;
+                activeBtn.classList.add('ring-2', 'ring-offset-2', 'ring-blue-400');
+            }
+
+            initializeGrid(size) {
+                this.gridSize = size;
+                this.grid = Array(size).fill().map(() => Array(size).fill(this.EMPTY));
+                this.startPosition = null;
+                this.endPosition = null;
+                this.visitedCount = 0;
+                this.pathLength = 0;
+                this.updateStats();
                 
-                // Create new grid
-                gridContainer.style.width = `${size * 32}px`;
+                // Create grid with optimized rendering
+                this.renderGrid();
                 
-                for (let i = 0; i < size; i++) {
-                    for (let j = 0; j < size; j++) {
+                this.elements.statusElement.textContent = 'Ready';
+                this.elements.statusElement.className = 'text-lg font-bold text-green-400';
+            }
+
+            renderGrid() {
+                const fragment = document.createDocumentFragment();
+                this.elements.gridContainer.innerHTML = '';
+                
+                // Create a proper grid layout
+                this.elements.gridContainer.style.display = 'grid';
+                this.elements.gridContainer.style.gridTemplateColumns = `repeat(${this.gridSize}, 30px)`;
+                this.elements.gridContainer.style.gap = '1px';
+                this.elements.gridContainer.style.justifyContent = 'center';
+                
+                for (let i = 0; i < this.gridSize; i++) {
+                    for (let j = 0; j < this.gridSize; j++) {
                         const cell = document.createElement('div');
                         cell.className = 'cell';
                         cell.dataset.row = i;
                         cell.dataset.col = j;
-                        
-                        cell.addEventListener('mousedown', handleCellClick);
-                        cell.addEventListener('mouseover', handleCellHover);
-                        cell.addEventListener('touchstart', handleCellTouch, { passive: false });
-                        
-                        gridContainer.appendChild(cell);
+                        fragment.appendChild(cell);
                     }
                 }
                 
-                statusElement.textContent = 'Ready';
-                statusElement.className = 'text-green-600';
+                this.elements.gridContainer.appendChild(fragment);
             }
 
-            // Handle cell click
-            function handleCellClick(e) {
-                if (visualizationRunning && !visualizationPaused) return;
+            handleCellInteraction(cellElement) {
+                if (this.visualizationRunning && !this.visualizationPaused) return;
                 
-                const row = parseInt(e.target.dataset.row);
-                const col = parseInt(e.target.dataset.col);
+                const row = parseInt(cellElement.dataset.row);
+                const col = parseInt(cellElement.dataset.col);
                 
-                if (currentMode === 'start') {
-                    // Remove previous start
-                    if (startPosition) {
-                        const [prevRow, prevCol] = startPosition;
-                        grid[prevRow][prevCol] = EMPTY;
-                        updateCell(prevRow, prevCol);
-                    }
-                    
-                    // Set new start
-                    grid[row][col] = START;
-                    startPosition = [row, col];
-                    updateCell(row, col);
-                } else if (currentMode === 'end') {
-                    // Remove previous end
-                    if (endPosition) {
-                        const [prevRow, prevCol] = endPosition;
-                        grid[prevRow][prevCol] = EMPTY;
-                        updateCell(prevRow, prevCol);
-                    }
-                    
-                    // Set new end
-                    grid[row][col] = END;
-                    endPosition = [row, col];
-                    updateCell(row, col);
-                } else if (currentMode === 'wall') {
-                    // Toggle wall
-                    if (grid[row][col] === WALL) {
-                        grid[row][col] = EMPTY;
-                    } else {
-                        grid[row][col] = WALL;
-                    }
-                    updateCell(row, col);
+                if (this.currentMode === 'start') {
+                    this.setStartPosition(row, col);
+                } else if (this.currentMode === 'end') {
+                    this.setEndPosition(row, col);
+                } else if (this.currentMode === 'wall') {
+                    this.toggleWall(row, col);
                 }
             }
 
-            // Handle cell hover (for drawing walls)
-            function handleCellHover(e) {
-                if (e.buttons !== 1 || visualizationRunning) return;
-                
-                const row = parseInt(e.target.dataset.row);
-                const col = parseInt(e.target.dataset.col);
-                
-                if (currentMode === 'wall' && grid[row][col] !== START && grid[row][col] !== END) {
-                    grid[row][col] = WALL;
-                    updateCell(row, col);
+            setStartPosition(row, col) {
+                if (this.startPosition) {
+                    const [prevRow, prevCol] = this.startPosition;
+                    this.grid[prevRow][prevCol] = this.EMPTY;
+                    this.updateCell(prevRow, prevCol);
                 }
+                
+                this.grid[row][col] = this.START;
+                this.startPosition = [row, col];
+                this.updateCell(row, col);
             }
 
-            // Handle touch events for mobile
-            function handleCellTouch(e) {
-                if (visualizationRunning && !visualizationPaused) return;
-                
-                e.preventDefault();
-                const touch = e.touches[0] || e.changedTouches[0];
-                const element = document.elementFromPoint(touch.clientX, touch.clientY);
-                
-                if (element && element.classList.contains('cell')) {
-                    const row = parseInt(element.dataset.row);
-                    const col = parseInt(element.dataset.col);
-                    
-                    if (currentMode === 'start') {
-                        // Remove previous start
-                        if (startPosition) {
-                            const [prevRow, prevCol] = startPosition;
-                            grid[prevRow][prevCol] = EMPTY;
-                            updateCell(prevRow, prevCol);
-                        }
-                        
-                        // Set new start
-                        grid[row][col] = START;
-                        startPosition = [row, col];
-                        updateCell(row, col);
-                    } else if (currentMode === 'end') {
-                        // Remove previous end
-                        if (endPosition) {
-                            const [prevRow, prevCol] = endPosition;
-                            grid[prevRow][prevCol] = EMPTY;
-                            updateCell(prevRow, prevCol);
-                        }
-                        
-                        // Set new end
-                        grid[row][col] = END;
-                        endPosition = [row, col];
-                        updateCell(row, col);
-                    } else if (currentMode === 'wall') {
-                        // Toggle wall
-                        if (grid[row][col] === WALL) {
-                            grid[row][col] = EMPTY;
-                        } else {
-                            grid[row][col] = WALL;
-                        }
-                        updateCell(row, col);
-                    }
+            setEndPosition(row, col) {
+                if (this.endPosition) {
+                    const [prevRow, prevCol] = this.endPosition;
+                    this.grid[prevRow][prevCol] = this.EMPTY;
+                    this.updateCell(prevRow, prevCol);
                 }
+                
+                this.grid[row][col] = this.END;
+                this.endPosition = [row, col];
+                this.updateCell(row, col);
             }
 
-            // Update cell appearance based on its state
-            function updateCell(row, col) {
-                const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+            toggleWall(row, col) {
+                if (this.grid[row][col] === this.START || this.grid[row][col] === this.END) return;
+                
+                this.grid[row][col] = this.grid[row][col] === this.WALL ? this.EMPTY : this.WALL;
+                this.updateCell(row, col);
+            }
+
+            updateCell(row, col) {
+                const cell = this.elements.gridContainer.querySelector(`[data-row="${row}"][data-col="${col}"]`);
                 if (!cell) return;
                 
-                cell.className = 'cell';
-                
-                switch(grid[row][col]) {
-                    case START:
-                        cell.classList.add('start');
-                        break;
-                    case END:
-                        cell.classList.add('end');
-                        break;
-                    case WALL:
-                        cell.classList.add('wall');
-                        break;
-                    case VISITED:
-                        cell.classList.add('visited');
-                        break;
-                    case PATH:
-                        cell.classList.add('path');
-                        break;
-                    case CURRENT:
-                        cell.classList.add('current');
-                        break;
-                    default:
-                        // Empty cell
-                        break;
-                }
+                // Use requestAnimationFrame for smooth updates
+                requestAnimationFrame(() => {
+                    cell.className = 'cell';
+                    
+                    switch(this.grid[row][col]) {
+                        case this.START:
+                            cell.classList.add('start');
+                            break;
+                        case this.END:
+                            cell.classList.add('end');
+                            break;
+                        case this.WALL:
+                            cell.classList.add('wall');
+                            break;
+                        case this.VISITED:
+                            cell.classList.add('visited');
+                            break;
+                        case this.PATH:
+                            cell.classList.add('path');
+                            break;
+                        case this.CURRENT:
+                            cell.classList.add('current');
+                            break;
+                    }
+                });
             }
 
-            // Generate random maze using DFS
-            function generateRandomMaze() {
-                if (visualizationRunning) return;
+            generateRandomMaze() {
+                if (this.visualizationRunning) return;
                 
-                initializeGrid(gridSize);
+                this.elements.generateMazeBtn.classList.add('loading');
                 
-                // Create a new grid for maze generation
-                const mazeGrid = Array(gridSize).fill().map(() => Array(gridSize).fill(WALL));
-                
-                // Start from a random position
-                const startRow = Math.floor(Math.random() * gridSize);
-                const startCol = Math.floor(Math.random() * gridSize);
-                const stack = [[startRow, startCol]];
-                mazeGrid[startRow][startCol] = EMPTY;
-                
-                // Directions: up, right, down, left
-                const directions = [[-2, 0], [0, 2], [2, 0], [0, -2]];
-                
-                while (stack.length > 0) {
-                    const [row, col] = stack.pop();
+                setTimeout(() => {
+                    this.initializeGrid(this.gridSize);
                     
-                    // Shuffle directions
-                    directions.sort(() => Math.random() - 0.5);
+                    // Create maze using recursive backtracking
+                    const mazeGrid = Array(this.gridSize).fill().map(() => Array(this.gridSize).fill(this.WALL));
                     
-                    for (const [dr, dc] of directions) {
-                        const newRow = row + dr;
-                        const newCol = col + dc;
+                    const stack = [];
+                    const startRow = 1;
+                    const startCol = 1;
+                    
+                    mazeGrid[startRow][startCol] = this.EMPTY;
+                    stack.push([startRow, startCol]);
+                    
+                    const directions = [[-2, 0], [0, 2], [2, 0], [0, -2]];
+                    
+                    while (stack.length > 0) {
+                        const [row, col] = stack[stack.length - 1];
+                        const neighbors = [];
                         
-                        if (newRow > 0 && newRow < gridSize - 1 && 
-                            newCol > 0 && newCol < gridSize - 1 && 
-                            mazeGrid[newRow][newCol] === WALL) {
+                        for (const [dr, dc] of directions) {
+                            const newRow = row + dr;
+                            const newCol = col + dc;
                             
-                            // Carve path
-                            mazeGrid[newRow][newCol] = EMPTY;
-                            mazeGrid[row + dr/2][col + dc/2] = EMPTY;
+                            if (newRow > 0 && newRow < this.gridSize - 1 && 
+                                newCol > 0 && newCol < this.gridSize - 1 && 
+                                mazeGrid[newRow][newCol] === this.WALL) {
+                                neighbors.push([newRow, newCol, row + dr/2, col + dc/2]);
+                            }
+                        }
+                        
+                        if (neighbors.length > 0) {
+                            const [newRow, newCol, wallRow, wallCol] = neighbors[Math.floor(Math.random() * neighbors.length)];
+                            mazeGrid[newRow][newCol] = this.EMPTY;
+                            mazeGrid[wallRow][wallCol] = this.EMPTY;
                             stack.push([newRow, newCol]);
+                        } else {
+                            stack.pop();
                         }
                     }
-                }
-                
-                // Apply maze to our grid
-                for (let i = 0; i < gridSize; i++) {
-                    for (let j = 0; j < gridSize; j++) {
-                        grid[i][j] = mazeGrid[i][j];
-                        updateCell(i, j);
+                    
+                    // Apply maze to grid
+                    for (let i = 0; i < this.gridSize; i++) {
+                        for (let j = 0; j < this.gridSize; j++) {
+                            this.grid[i][j] = mazeGrid[i][j];
+                            this.updateCell(i, j);
+                        }
                     }
-                }
-                
-                // Set random start and end positions
-                setRandomStartEnd();
+                    
+                    this.setRandomStartEnd();
+                    this.elements.generateMazeBtn.classList.remove('loading');
+                }, 100);
             }
 
-            // Set random start and end positions
-            function setRandomStartEnd() {
-                // Find all empty cells
+            setRandomStartEnd() {
                 const emptyCells = [];
-                for (let i = 0; i < gridSize; i++) {
-                    for (let j = 0; j < gridSize; j++) {
-                        if (grid[i][j] === EMPTY) {
+                for (let i = 0; i < this.gridSize; i++) {
+                    for (let j = 0; j < this.gridSize; j++) {
+                        if (this.grid[i][j] === this.EMPTY) {
                             emptyCells.push([i, j]);
                         }
                     }
@@ -546,133 +1022,91 @@
                 
                 if (emptyCells.length < 2) return;
                 
-                // Shuffle and pick first two
-                emptyCells.sort(() => Math.random() - 0.5);
+                const shuffled = emptyCells.sort(() => Math.random() - 0.5);
+                const [startRow, startCol] = shuffled[0];
+                const [endRow, endCol] = shuffled[1];
                 
-                // Set start
-                const [startRow, startCol] = emptyCells[0];
-                grid[startRow][startCol] = START;
-                startPosition = [startRow, startCol];
-                updateCell(startRow, startCol);
-                
-                // Set end
-                const [endRow, endCol] = emptyCells[1];
-                grid[endRow][endCol] = END;
-                endPosition = [endRow, endCol];
-                updateCell(endRow, endCol);
+                this.setStartPosition(startRow, startCol);
+                this.setEndPosition(endRow, endCol);
             }
 
-            // Clear walls but keep start and end positions
-            function clearWalls() {
-                if (visualizationRunning) return;
+            clearWalls() {
+                if (this.visualizationRunning) return;
                 
-                for (let i = 0; i < gridSize; i++) {
-                    for (let j = 0; j < gridSize; j++) {
-                        if (grid[i][j] === WALL) {
-                            grid[i][j] = EMPTY;
-                            updateCell(i, j);
+                for (let i = 0; i < this.gridSize; i++) {
+                    for (let j = 0; j < this.gridSize; j++) {
+                        if (this.grid[i][j] === this.WALL) {
+                            this.grid[i][j] = this.EMPTY;
+                            this.updateCell(i, j);
                         }
                     }
                 }
             }
 
-            // Reset visualization
-            function resetVisualization() {
-                if (visualizationRunning && !visualizationPaused) return;
-                
-                // Clear all timeouts
-                timeoutIds.forEach(timeoutId => clearTimeout(timeoutId));
-                timeoutIds = [];
-                
-                visualizationRunning = false;
-                visualizationPaused = false;
-                visitedCount = 0;
-                pathLength = 0;
-                updateStats();
-                
-                for (let i = 0; i < gridSize; i++) {
-                    for (let j = 0; j < gridSize; j++) {
-                        if (grid[i][j] === VISITED || grid[i][j] === PATH || grid[i][j] === CURRENT) {
-                            grid[i][j] = EMPTY;
-                            updateCell(i, j);
-                        }
-                    }
-                }
-                
-                startBtn.textContent = 'Start';
-                startBtn.disabled = false;
-                pauseBtn.disabled = true;
-                statusElement.textContent = 'Ready';
-                statusElement.className = 'text-green-600';
-            }
-
-            // Update statistics display
-            function updateStats() {
-                stepsElement.textContent = visitedCount + pathLength;
-                visitedCountElement.textContent = visitedCount;
-                pathLengthElement.textContent = pathLength;
-            }
-
-            // Visualize pathfinding algorithm
-            async function visualizeAlgorithm() {
-                if (visualizationRunning || !startPosition || !endPosition) return;
-                
-                visualizationRunning = true;
-                startBtn.disabled = true;
-                pauseBtn.disabled = false;
-                statusElement.textContent = 'Running';
-                statusElement.className = 'text-blue-600';
-                
-                // Reset any previous visualization
-                resetVisualization();
-                visitedCount = 0;
-                pathLength = 0;
-                updateStats();
-                
-                const algorithm = algorithmSelect.value;
-                const speed = 100 - (speedSlider.value * 10); // Convert scale to milliseconds
-                
-                if (algorithm === 'bfs') {
-                    await visualizeBFS(speed);
+            handleStartClick() {
+                if (this.visualizationRunning && this.visualizationPaused) {
+                    this.togglePause();
                 } else {
-                    await visualizeDFS(speed);
+                    this.visualizeAlgorithm();
                 }
-                
-                visualizationRunning = false;
-                startBtn.disabled = false;
-                pauseBtn.disabled = true;
             }
 
-            // Visualize BFS algorithm
-            async function visualizeBFS(speed) {
-                return new Promise(resolve => {
-                    const [startRow, startCol] = startPosition;
-                    const [endRow, endCol] = endPosition;
+            async visualizeAlgorithm() {
+                if (this.visualizationRunning || !this.startPosition || !this.endPosition) return;
+                
+                this.visualizationRunning = true;
+                this.elements.startBtn.disabled = true;
+                this.elements.pauseBtn.disabled = false;
+                this.elements.statusElement.textContent = 'Running';
+                this.elements.statusElement.className = 'text-lg font-bold text-blue-400';
+                
+                this.resetVisualization();
+                
+                const algorithm = this.elements.algorithmSelect.value;
+                const speed = 110 - (this.elements.speedSlider.value * 10);
+                
+                try {
+                    if (algorithm === 'bfs') {
+                        await this.visualizeBFS(speed);
+                    } else {
+                        await this.visualizeDFS(speed);
+                    }
+                } catch (error) {
+                    console.error('Visualization error:', error);
+                } finally {
+                    this.visualizationRunning = false;
+                    this.elements.startBtn.disabled = false;
+                    this.elements.pauseBtn.disabled = true;
+                }
+            }
+
+            async visualizeBFS(speed) {
+                return new Promise((resolve) => {
+                    const [startRow, startCol] = this.startPosition;
+                    const [endRow, endCol] = this.endPosition;
                     
                     const queue = [[startRow, startCol]];
-                    const visited = Array(gridSize).fill().map(() => Array(gridSize).fill(false));
+                    const visited = Array(this.gridSize).fill().map(() => Array(this.gridSize).fill(false));
                     visited[startRow][startCol] = true;
                     
-                    const predecessors = Array(gridSize).fill().map(() => Array(gridSize).fill(null));
-                    
+                    const predecessors = Array(this.gridSize).fill().map(() => Array(this.gridSize).fill(null));
                     let found = false;
-                    let steps = 0;
                     
-                    // Process queue
                     const processQueue = () => {
-                        if (visualizationPaused) {
-                            timeoutIds.push(setTimeout(processQueue, 100));
+                        if (this.visualizationPaused) {
+                            const timeoutId = setTimeout(processQueue, 100);
+                            this.timeoutIds.add(timeoutId);
                             return;
                         }
                         
                         if (queue.length === 0 || found) {
                             if (found) {
-                                backtrackPath(predecessors, [endRow, endCol], speed);
+                                this.backtrackPath(predecessors, [endRow, endCol], speed);
                             } else {
-                                statusElement.textContent = 'No Path Found';
-                                statusElement.className = 'text-red-600';
-                                resolve();
+                                this.elements.statusElement.textContent = 'No Path Found';
+                                this.elements.statusElement.className = 'text-lg font-bold text-red-400';
                             }
+                            resolve();
                             return;
                         }
                         
@@ -680,106 +1114,94 @@
                         
                         if (row === endRow && col === endCol) {
                             found = true;
-                            timeoutIds.push(setTimeout(processQueue, speed));
+                            const timeoutId = setTimeout(processQueue, speed);
+                            this.timeoutIds.add(timeoutId);
                             return;
                         }
                         
-                        // Mark as visited (but not if it's start or end)
-                        if (grid[row][col] !== START && grid[row][col] !== END) {
-                            grid[row][col] = VISITED;
-                            visitedCount++;
-                            updateCell(row, col);
-                            updateStats();
+                        if (this.grid[row][col] !== this.START && this.grid[row][col] !== this.END) {
+                            this.grid[row][col] = this.VISITED;
+                            this.visitedCount++;
+                            this.updateCell(row, col);
+                            this.updateStats();
                         }
                         
-                        // Check all four directions
                         const directions = [[-1, 0], [0, 1], [1, 0], [0, -1]];
                         
                         for (const [dr, dc] of directions) {
                             const newRow = row + dr;
                             const newCol = col + dc;
                             
-                            if (newRow >= 0 && newRow < gridSize && 
-                                newCol >= 0 && newCol < gridSize && 
+                            if (this.isValidCell(newRow, newCol) && 
                                 !visited[newRow][newCol] && 
-                                grid[newRow][newCol] !== WALL) {
+                                this.grid[newRow][newCol] !== this.WALL) {
                                 
                                 visited[newRow][newCol] = true;
                                 predecessors[newRow][newCol] = [row, col];
                                 queue.push([newRow, newCol]);
-                                
-                                // Highlight current cell being processed
-                                if (grid[newRow][newCol] !== END) {
-                                    grid[newRow][newCol] = CURRENT;
-                                    updateCell(newRow, newCol);
-                                    timeoutIds.push(setTimeout(() => {
-                                        if (grid[newRow][newCol] === CURRENT && grid[newRow][newCol] !== END) {
-                                            grid[newRow][newCol] = EMPTY;
-                                            updateCell(newRow, newCol);
-                                        }
-                                    }, speed));
-                                }
                             }
                         }
                         
-                        steps++;
-                        timeoutIds.push(setTimeout(processQueue, speed));
+                        const timeoutId = setTimeout(processQueue, speed);
+                        this.timeoutIds.add(timeoutId);
                     };
                     
                     processQueue();
                 });
             }
 
-            // Visualize DFS algorithm
-            async function visualizeDFS(speed) {
-                return new Promise(resolve => {
-                    const [startRow, startCol] = startPosition;
-                    const [endRow, endCol] = endPosition;
+            async visualizeDFS(speed) {
+                return new Promise((resolve) => {
+                    const [startRow, startCol] = this.startPosition;
+                    const [endRow, endCol] = this.endPosition;
                     
                     const stack = [[startRow, startCol]];
-                    const visited = Array(gridSize).fill().map(() => Array(gridSize).fill(false));
-                    visited[startRow][startCol] = true;
-                    
-                    const predecessors = Array(gridSize).fill().map(() => Array(gridSize).fill(null));
-                    
+                    const visited = Array(this.gridSize).fill().map(() => Array(this.gridSize).fill(false));
+                    const predecessors = Array(this.gridSize).fill().map(() => Array(this.gridSize).fill(null));
                     let found = false;
-                    let steps = 0;
                     
-                    // Process stack
                     const processStack = () => {
-                        if (visualizationPaused) {
-                            timeoutIds.push(setTimeout(processStack, 100));
+                        if (this.visualizationPaused) {
+                            const timeoutId = setTimeout(processStack, 100);
+                            this.timeoutIds.add(timeoutId);
                             return;
                         }
                         
                         if (stack.length === 0 || found) {
                             if (found) {
-                                backtrackPath(predecessors, [endRow, endCol], speed);
+                                this.backtrackPath(predecessors, [endRow, endCol], speed);
                             } else {
-                                statusElement.textContent = 'No Path Found';
-                                statusElement.className = 'text-red-600';
-                                resolve();
+                                this.elements.statusElement.textContent = 'No Path Found';
+                                this.elements.statusElement.className = 'text-lg font-bold text-red-400';
                             }
+                            resolve();
                             return;
                         }
                         
                         const [row, col] = stack.pop();
                         
-                        if (row === endRow && col === endCol) {
-                            found = true;
-                            timeoutIds.push(setTimeout(processStack, speed));
+                        if (visited[row][col]) {
+                            const timeoutId = setTimeout(processStack, speed);
+                            this.timeoutIds.add(timeoutId);
                             return;
                         }
                         
-                        // Mark as visited (but not if it's start or end)
-                        if (grid[row][col] !== START && grid[row][col] !== END) {
-                            grid[row][col] = VISITED;
-                            visitedCount++;
-                            updateCell(row, col);
-                            updateStats();
+                        visited[row][col] = true;
+                        
+                        if (row === endRow && col === endCol) {
+                            found = true;
+                            const timeoutId = setTimeout(processStack, speed);
+                            this.timeoutIds.add(timeoutId);
+                            return;
                         }
                         
-                        // Check all four directions in random order for DFS
+                        if (this.grid[row][col] !== this.START && this.grid[row][col] !== this.END) {
+                            this.grid[row][col] = this.VISITED;
+                            this.visitedCount++;
+                            this.updateCell(row, col);
+                            this.updateStats();
+                        }
+                        
                         const directions = [[-1, 0], [0, 1], [1, 0], [0, -1]];
                         directions.sort(() => Math.random() - 0.5);
                         
@@ -787,129 +1209,115 @@
                             const newRow = row + dr;
                             const newCol = col + dc;
                             
-                            if (newRow >= 0 && newRow < gridSize && 
-                                newCol >= 0 && newCol < gridSize && 
+                            if (this.isValidCell(newRow, newCol) && 
                                 !visited[newRow][newCol] && 
-                                grid[newRow][newCol] !== WALL) {
+                                this.grid[newRow][newCol] !== this.WALL) {
                                 
-                                visited[newRow][newCol] = true;
                                 predecessors[newRow][newCol] = [row, col];
                                 stack.push([newRow, newCol]);
-                                
-                                // Highlight current cell being processed
-                                if (grid[newRow][newCol] !== END) {
-                                    grid[newRow][newCol] = CURRENT;
-                                    updateCell(newRow, newCol);
-                                    timeoutIds.push(setTimeout(() => {
-                                        if (grid[newRow][newCol] === CURRENT && grid[newRow][newCol] !== END) {
-                                            grid[newRow][newCol] = EMPTY;
-                                            updateCell(newRow, newCol);
-                                        }
-                                    }, speed));
-                                }
                             }
                         }
                         
-                        steps++;
-                        timeoutIds.push(setTimeout(processStack, speed));
+                        const timeoutId = setTimeout(processStack, speed);
+                        this.timeoutIds.add(timeoutId);
                     };
                     
                     processStack();
                 });
             }
 
-            // Backtrack from end to start to show path
-            function backtrackPath(predecessors, [endRow, endCol], speed) {
-                let path = [[endRow, endCol]];
-                let [row, col] = predecessors[endRow][endCol];
+            isValidCell(row, col) {
+                return row >= 0 && row < this.gridSize && col >= 0 && col < this.gridSize;
+            }
+
+            backtrackPath(predecessors, [endRow, endCol], speed) {
+                const path = [];
+                let current = [endRow, endCol];
                 
-                while (row !== null && col !== null && 
-                       !(row === startPosition[0] && col === startPosition[1])) {
-                    path.push([row, col]);
-                    [row, col] = predecessors[row][col];
+                while (current && predecessors[current[0]][current[1]]) {
+                    path.push(current);
+                    current = predecessors[current[0]][current[1]];
                 }
                 
                 path.reverse();
                 
                 let delay = 0;
-                for (const [r, c] of path) {
-                    if (grid[r][c] !== START && grid[r][c] !== END) {
-                        timeoutIds.push(setTimeout(() => {
-                            grid[r][c] = PATH;
-                            pathLength++;
-                            updateCell(r, c);
-                            updateStats();
-                            statusElement.textContent = 'Path Found';
-                            statusElement.className = 'text-green-600';
-                        }, delay));
-                        delay += speed;
+                for (const [row, col] of path) {
+                    if (this.grid[row][col] !== this.START && this.grid[row][col] !== this.END) {
+                        const timeoutId = setTimeout(() => {
+                            this.grid[row][col] = this.PATH;
+                            this.pathLength++;
+                            this.updateCell(row, col);
+                            this.updateStats();
+                            this.elements.statusElement.textContent = 'Path Found!';
+                            this.elements.statusElement.className = 'text-lg font-bold text-green-400';
+                        }, delay);
+                        this.timeoutIds.add(timeoutId);
+                        delay += speed * 0.5;
+                    }
+                }
+            }
+
+            resetVisualization() {
+                this.timeoutIds.forEach(id => clearTimeout(id));
+                this.timeoutIds.clear();
+                
+                if (this.animationFrameId) {
+                    cancelAnimationFrame(this.animationFrameId);
+                }
+                
+                this.visualizationRunning = false;
+                this.visualizationPaused = false;
+                this.visitedCount = 0;
+                this.pathLength = 0;
+                this.updateStats();
+                
+                for (let i = 0; i < this.gridSize; i++) {
+                    for (let j = 0; j < this.gridSize; j++) {
+                        if (this.grid[i][j] === this.VISITED || 
+                            this.grid[i][j] === this.PATH || 
+                            this.grid[i][j] === this.CURRENT) {
+                            this.grid[i][j] = this.EMPTY;
+                            this.updateCell(i, j);
+                        }
                     }
                 }
                 
-                timeoutIds.push(setTimeout(() => {}, delay));
+                this.elements.startBtn.textContent = '▶️ Start';
+                this.elements.startBtn.disabled = false;
+                this.elements.pauseBtn.disabled = true;
+                this.elements.statusElement.textContent = 'Ready';
+                this.elements.statusElement.className = 'text-lg font-bold text-green-400';
             }
 
-            // Toggle pause/continue visualization
-            function togglePause() {
-                if (!visualizationRunning) return;
+            togglePause() {
+                if (!this.visualizationRunning) return;
                 
-                visualizationPaused = !visualizationPaused;
+                this.visualizationPaused = !this.visualizationPaused;
                 
-                if (visualizationPaused) {
-                    pauseBtn.textContent = 'Continue';
-                    statusElement.textContent = 'Paused';
-                    statusElement.className = 'text-yellow-600';
+                if (this.visualizationPaused) {
+                    this.elements.pauseBtn.textContent = '▶️ Continue';
+                    this.elements.statusElement.textContent = 'Paused';
+                    this.elements.statusElement.className = 'text-lg font-bold text-yellow-400';
                 } else {
-                    pauseBtn.textContent = 'Pause';
-                    statusElement.textContent = 'Running';
-                    statusElement.className = 'text-blue-600';
+                    this.elements.pauseBtn.textContent = '⏸️ Pause';
+                    this.elements.statusElement.textContent = 'Running';
+                    this.elements.statusElement.className = 'text-lg font-bold text-blue-400';
                 }
             }
 
-            // Event listeners
-            gridSizeSelect.addEventListener('change', () => {
-                initializeGrid(parseInt(gridSizeSelect.value));
-            });
-            
-            generateMazeBtn.addEventListener('click', generateRandomMaze);
-            
-            addStartBtn.addEventListener('click', () => {
-                currentMode = 'start';
-                addStartBtn.classList.add('ring-2', 'ring-offset-2', 'ring-blue-500');
-                addEndBtn.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-500');
-                addWallBtn.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-500');
-            });
-            
-            addEndBtn.addEventListener('click', () => {
-                currentMode = 'end';
-                addEndBtn.classList.add('ring-2', 'ring-offset-2', 'ring-blue-500');
-                addStartBtn.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-500');
-                addWallBtn.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-500');
-            });
-            
-            addWallBtn.addEventListener('click', () => {
-                currentMode = 'wall';
-                addWallBtn.classList.add('ring-2', 'ring-offset-2', 'ring-blue-500');
-                addStartBtn.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-500');
-                addEndBtn.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-500');
-            });
-            
-            clearWallsBtn.addEventListener('click', clearWalls);
-            
-            startBtn.addEventListener('click', () => {
-                if (visualizationRunning && visualizationPaused) {
-                    togglePause();
-                } else {
-                    visualizeAlgorithm();
-                }
-            });
-            
-            pauseBtn.addEventListener('click', togglePause);
-            
-            resetBtn.addEventListener('click', resetVisualization);
-            
-            // Initialize with default grid size
-            initializeGrid(gridSize);
+            updateStats() {
+                requestAnimationFrame(() => {
+                    this.elements.stepsElement.textContent = this.visitedCount + this.pathLength;
+                    this.elements.visitedCountElement.textContent = this.visitedCount;
+                    this.elements.pathLengthElement.textContent = this.pathLength;
+                });
+            }
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            new MazeVisualizer();
         });
     </script>
 </body>
